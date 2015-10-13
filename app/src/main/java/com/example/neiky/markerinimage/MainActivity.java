@@ -1,5 +1,6 @@
 package com.example.neiky.markerinimage;
 
+import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,11 +15,16 @@ import android.widget.RelativeLayout;
 public class MainActivity extends AppCompatActivity {
 
     ImageView addedImage;
+    ImageView clickImage;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        clickImage = (ImageView) findViewById(R.id.imageView);
+
+        // the container holds the image and all the added markers
         final RelativeLayout container = (RelativeLayout) findViewById(R.id.container);
         container.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -26,9 +32,12 @@ public class MainActivity extends AppCompatActivity {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     int x = (int) event.getX();
                     int y = (int) event.getY();
-                    int height = 120;   // TODO how to obtain the real displayed size of the marker?
-                    int width = 120;
-                    int posX = x - (width / 2), posY = y - (height / 2);
+
+                    Drawable markerIcon = ContextCompat.getDrawable(getApplicationContext(), R.drawable.marker);
+                    int height = markerIcon.getIntrinsicHeight();
+                    int width = markerIcon.getIntrinsicWidth();
+                    int posX = x - (width / 2);
+                    int posY = y - (height / 2);
                     RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 
                     if (addedImage == null) {
@@ -38,21 +47,42 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     //addedImage.setImageDrawable(getResources().getDrawable(R.drawable.marker));
-                    addedImage.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.marker));
+                    addedImage.setImageDrawable(markerIcon);
 
-                    if (x < width / 2) {
-                        posX = 0;
-                    }
-                    if (y < height / 2) {
-                        posY = 0;
+                    final int actualHeight;
+                    final int actualWidth;
+                    final int imageViewHeight = clickImage.getHeight();
+                    final int imageViewWidth = clickImage.getWidth();
+                    final int bitmapHeight = clickImage.getDrawable().getIntrinsicHeight();
+                    final int bitmapWidth = clickImage.getDrawable().getIntrinsicWidth();
+                    if (imageViewHeight * bitmapWidth <= imageViewWidth * bitmapHeight) {
+                        actualHeight = imageViewHeight;
+                        // Breite der ImageView anhand des Seitenverhältnisses des umgebenden Containers (rackImage) bestimmen
+                        actualWidth = bitmapWidth * imageViewHeight / bitmapHeight;
+                    } else {
+                        // Höhe der ImageView anhand des Seitenverhältnisses des umgebenden Containers (rackImage) bestimmen
+                        actualHeight = bitmapHeight * imageViewWidth / bitmapWidth;
+                        actualWidth = imageViewWidth;
                     }
 
-                    if (x > container.getWidth() - width / 2) {
-                        posX = container.getWidth() - width;
+                    int distanceTop = (clickImage.getHeight()-actualHeight) / 2;
+                    int distanceLeft = (clickImage.getWidth()-actualWidth) / 2;
+
+                    if (x < distanceLeft + width/2)
+                    {
+                        posX = distanceLeft;
                     }
-                    if (y > container.getHeight() - height / 2) {
-                        posY = container.getHeight() - height;
+                    if (x > clickImage.getMeasuredWidth() - distanceLeft - width / 2) {
+                        posX = clickImage.getMeasuredWidth() - distanceLeft - width;
                     }
+
+                    if (y < distanceTop + height / 2) {
+                        posY = distanceTop;
+                    }
+                    if (y > clickImage.getMeasuredHeight() - distanceTop - height){
+                        posY = clickImage.getMeasuredHeight() - distanceTop - height;
+                    }
+
                     lp.setMargins(posX, posY, 0, 0);
                     addedImage.setLayoutParams(lp);
                     ((ViewGroup) v).addView(addedImage);
